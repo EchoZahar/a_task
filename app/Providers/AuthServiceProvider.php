@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 // use Illuminate\Support\Facades\Gate as Gate;
+use App\Models\User;
+use Illuminate\Auth\Access\Response;
 use Illuminate\Contracts\Auth\Access\Gate as GateContract;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 
@@ -26,8 +28,10 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies($gate);
 
-        $gate->define('isAdmin', fn ($user) => $user->type === 'admin');
+        $gate->define('isAdmin', function (User $user) {
+            return  $user->type === 'admin' ? Response::allow() : Response::deny('You must be an administrator.');
+        });
 
-        $gate->define('isCustomer', fn ($user) => $user->type === 'customer');
+        $gate->define('isCustomer', fn (User $user) => $user->type === 'customer');
     }
 }

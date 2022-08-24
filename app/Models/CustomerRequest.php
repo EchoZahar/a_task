@@ -16,4 +16,9 @@ class CustomerRequest extends Model
     const ACTIVE = 'Active';
     const RESOLVED = 'Resolved';
     public static $status = [self::ACTIVE, self::RESOLVED];
+
+    public function comments()
+    {
+        return $this->morphToMany(Comment::class, 'commentable');
+    }
 }
