@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Filters\CustomerRequestFilters\CustomerRequestsFilter;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 
 class CustomerRequest extends Model
 {
@@ -17,8 +19,14 @@ class CustomerRequest extends Model
     const RESOLVED = 'Resolved';
     public static $status = [self::ACTIVE, self::RESOLVED];
 
-    public function comments()
+    /**
+     * filter function
+     * @param Builder $builder
+     * @param $request
+     * @return Builder
+     */
+    public function scopeFilter(Builder $builder, $request): Builder
     {
-        return $this->morphToMany(Comment::class, 'commentable');
+        return (new CustomerRequestsFilter($request))->filter($builder);
     }
 }

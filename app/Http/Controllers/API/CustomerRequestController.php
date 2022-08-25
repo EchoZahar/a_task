@@ -26,9 +26,7 @@ class CustomerRequestController extends BaseController
      */
     public function index(Request $request): ResourceCollection
     {
-//        Later create filter by this collection.
-        $collection = CustomerRequest::orderBy('created_at', 'desc')->paginate(10);
-        return CustomerRequestResource::collection($collection);
+        return CustomerRequestResource::collection(CustomerRequest::filter($request)->orderBy('created_at', 'desc')->paginate(10));
     }
 
     /**
@@ -40,8 +38,7 @@ class CustomerRequestController extends BaseController
     public function store(CustomerRequestSaveRequest $request): JsonResponse
     {
         if (!$request->validated()) return $this->sendErrors('Validation failed');
-        $data = $request->input();
-        $customerRequest = CustomerRequest::create($data);
+        $customerRequest = CustomerRequest::create($request->input());
         NewCustomerRequestJob::dispatch($customerRequest);
         return $this->sendResponse($customerRequest, 'you request create successfully ! Answer you get by email !');
     }
@@ -51,10 +48,9 @@ class CustomerRequestController extends BaseController
      * @param $id
      * @return CustomerRequestItemResource
      */
-    public function show($id):CustomerRequestItemResource
+    public function show($id): CustomerRequestItemResource
     {
-        $customerRequest = CustomerRequest::where('id', $id)->firstOrFail();
-        return new CustomerRequestItemResource($customerRequest);
+        return (new CustomerRequestItemResource(CustomerRequest::where('id', $id)->firstOrFail()));
     }
 
     /**
@@ -70,18 +66,17 @@ class CustomerRequestController extends BaseController
             return $this->sendErrors('Administrator only make update request !');
         }
         $customerRequest = CustomerRequest::findOrFail($id);
-        $user = $request->user();
         $data = $request->input();
         if ($data['comment'] and $data['status'] !== CustomerRequest::RESOLVED) {
             return $this->sendErrors('Please check status! Or send question for customer email: ' . $customerRequest->email);
         }
-        $data['comment'] = $request->input('comment') . PHP_EOL . ' Admin: ' . $user->name . ', replied to you.';
+        $data['comment'] = $request->input('comment') . PHP_EOL . ' Admin: ' . $request->user()->name ?? '' . ', replied to you.';
         if ($customerRequest->update($data)) {
             SendQuestionForCustomerJob::dispatch($customerRequest, $request->user());
             return $this->sendResponse('Email send customer: ' . $customerRequest->name . ' for he email: ' . $customerRequest->email,
                 'Successfully, you commit is published !');
         } else {
-            return $this->sendErrors('Something wrong ! ' . PHP_EOL . ' Please try again. ');
+            return $this->sendErrors('Something wrong ! ' . PHP_EOL . ' Please try again.');
         }
     }
 
@@ -114,7 +109,6 @@ class CustomerRequestController extends BaseController
      */
     public function searchByNameOrEmail($value): mixed
     {
-        return CustomerRequest::where('name', 'like', '%' . $value . '%')
-            ->orWhere('email', 'like', '%' . $value . '%')->paginate(12);
+        return CustomerRequest::where('name', 'like', '%' . $value . '%')->orWhere('email', 'like', '%' . $value . '%')->paginate(12);
     }
 }
