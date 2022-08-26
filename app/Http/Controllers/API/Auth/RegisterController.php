@@ -66,6 +66,7 @@ class RegisterController extends BaseController
      */
     public function signUp(UserSignUpRequest $request): JsonResponse
     {
+        if (!$request->validated()) return $this->sendErrors('Validation failed');
         $credentials = $request->input();
         $credentials['password'] = bcrypt($request->input('password'));
         $user = User::create($credentials);

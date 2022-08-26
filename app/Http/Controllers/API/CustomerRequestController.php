@@ -292,15 +292,14 @@ class CustomerRequestController extends BaseController
      */
     public function destroy(Request $request, int $id): JsonResponse
     {
-        if (Gate::denies('isAdmin')) return $this->sendErrors('Administrator only make update request !');
+        if (Gate::denies('isAdmin'))
+            return $this->sendErrors('Something wrong! Please try again later or resolved this request');
         $customerRequest = CustomerRequest::findOrFail($id);
         if ($customerRequest->status === CustomerRequest::RESOLVED and $customerRequest->comment) {
             NotifyAdminsByDeleteCustomerRequestJob::dispatch($customerRequest, $request->user());
             $customerRequest->destroy($id);
             return $this->sendResponse('Request delete successfully',
                 'Customer request id: ' . $customerRequest->id . ' destroy, email\'s send customer and administrators');
-        } else {
-            return $this->sendErrors('Something wrong! Please try again later or resolved this request');
         }
     }
 
